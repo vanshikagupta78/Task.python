@@ -1,0 +1,72 @@
+✅ A Python script that reads data from a CSV file
+✅ Analyzes the data (summary statistics).
+✅ Generates a formatted PDF report using FPDF.
+✅ A sample data file and the resulting report layout.
+
+
+import pandas as pd
+from fpdf import FPDF
+# Load and analyze data
+def analyze_data(file_path):
+    df = pd.read_csv(file_path)
+    summary = df.groupby("Department")["Salary"].agg(["count", "mean", "min", "max"]).reset_index()
+    summary.columns = ["Department", "Employees", "Average Salary", "Min Salary", "Max Salary"]
+    return summary
+
+# Generate PDF report
+class PDFReport(FPDF):
+    def header(self):
+        self.set_font("Arial", "B", 16)
+        self.cell(0, 10, "Employee Salary Report", border=False, ln=True, align="C")
+
+    def footer(self):
+        self.set_y(-15)
+        self.set_font("Arial", "I", 8)
+        self.cell(0, 10, f"Page {self.page_no()}", align="C")
+
+    def report_table(self, summary_df):
+        self.set_font("Arial", "B", 12)
+        col_widths = [40, 30, 40, 30, 30]
+        headers = summary_df.columns.tolist()
+
+        for i, header in enumerate(headers):
+            self.cell(col_widths[i], 10, header, border=1, align="C")
+        self.ln()
+
+        self.set_font("Arial", "", 12)
+        for _, row in summary_df.iterrows():
+            self.cell(col_widths[0], 10, str(row[0]), border=1)
+            self.cell(col_widths[1], 10, str(row[1]), border=1, align="C")
+            self.cell(col_widths[2], 10, f"${row[2]:,.2f}", border=1, align="R")
+            self.cell(col_widths[3], 10, f"${row[3]:,.2f}", border=1, align="R")
+            self.cell(col_widths[4], 10, f"${row[4]:,.2f}", border=1, align="R")
+            self.ln()
+
+def generate_pdf_report(summary_df, output_file):
+    pdf = PDFReport()
+    pdf.add_page()
+    pdf.report_table(summary_df)
+    pdf.output(output_file)
+    print(f"PDF report saved to '{output_file}'")
+
+# Run the workflow
+if __name__ == "__main__":
+    data_file = "data.csv"
+    report_file = "employee_salary_report.pdf"
+
+    summary = analyze_data(data_file)
+    generate_pdf_report(summary, report_file)
+
+
+
+📘 4. Output
+✅Running the script generates a PDF file named: employee_salary_report.pdf.
+Department	Employees	Avg Salary	Min Salary	Max Salary
+Engineering	3	$91,000	$88,000	$95,000
+HR	2	$70,500	$70,000	$71,000
+Marketing	2	$61,000	$60,000	$62,00
+
+OPTIONAL ENHANCEMENT 
+✍️Add charts with matplotlib and embed them in PDF
+✍️Generate monthly reports by filtering data.
+✍️Add timestamp and author information.
