@@ -1,0 +1,105 @@
+✅ Features:
+Uses NLTK for text processing (tokenization, lemmatization).
+Matches user input to predefined intents.
+Can be extended easily with more responses and intents.
+
+📁 Deliverables:
+Python Script (chatbot.py)
+Working chatbot (command line)
+
+
+
+import nltk
+import random
+import string
+import json
+
+from nltk.stem import WordNetLemmatizer
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.naive_bayes import MultinomialNB
+
+# Download required NLTK data
+nltk.download('punkt')
+nltk.download('wordnet')
+
+lemmatizer = WordNetLemmatizer()
+
+# Example intents
+intents = {
+    "intents": [
+        {
+            "tag": "greeting",
+            "patterns": ["Hi", "Hello", "Hey", "What's up?", "Howdy"],
+            "responses": ["Hello!", "Hi there!", "Greetings!", "How can I help you?"]
+        },
+        {
+            "tag": "goodbye",
+            "patterns": ["Bye", "See you", "Goodbye", "Catch you later"],
+            "responses": ["Goodbye!", "See you later!", "Take care!"]
+        },
+        {
+            "tag": "thanks",
+            "patterns": ["Thanks", "Thank you", "That's helpful"],
+            "responses": ["You're welcome!", "Glad I could help!", "Any time!"]
+        },
+        {
+            "tag": "hours",
+            "patterns": ["What are your hours?", "When are you open?", "Opening hours?"],
+            "responses": ["We're open 9am to 5pm, Monday to Friday."]
+        },
+        {
+            "tag": "location",
+            "patterns": ["Where are you located?", "Location?", "Where can I find you?"],
+            "responses": ["We're located at 123 AI Street, Tech City."]
+        }
+    ]
+}
+
+# Preprocess and train the chatbot
+def preprocess(sentence):
+    tokens = nltk.word_tokenize(sentence)
+    tokens = [lemmatizer.lemmatize(w.lower()) for w in tokens if w not in string.punctuation]
+    return " ".join(tokens)
+
+def train_bot(intents_data):
+    tags = []
+    sentences = []
+    for intent in intents_data["intents"]:
+        for pattern in intent["patterns"]:
+            sentences.append(preprocess(pattern))
+            tags.append(intent["tag"])
+
+    vectorizer = CountVectorizer()
+    X = vectorizer.fit_transform(sentences)
+    classifier = MultinomialNB()
+    classifier.fit(X, tags)
+
+    return vectorizer, classifier
+
+vectorizer, classifier = train_bot(intents)
+
+# Get response
+def get_response(user_input):
+    user_input_proc = preprocess(user_input)
+    X_test = vectorizer.transform([user_input_proc])
+    predicted_tag = classifier.predict(X_test)[0]
+
+    for intent in intents["intents"]:
+        if intent["tag"] == predicted_tag:
+            return random.choice(intent["responses"])
+
+    return "I'm not sure how to respond to that."
+
+# Chat loop
+def chat():
+    print("🤖 Chatbot is ready! Type 'quit' to exit.")
+    while True:
+        user_input = input("You: ")
+        if user_input.lower() == 'quit':
+            print("Chatbot: Bye! 👋")
+            break
+        response = get_response(user_input)
+        print("Chatbot:", response)
+
+if __name__ == "__main__":
+    chat()
